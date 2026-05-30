@@ -1,0 +1,16 @@
+{
+  "name": "ip-analyzer-vps",
+  "version": "1.0.0",
+  "description": "VPS backend that catches the visitor IP and logs it to Firebase RTD.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.0.0"
+  }
+}

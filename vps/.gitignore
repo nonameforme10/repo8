@@ -1,0 +1,4 @@
+node_modules/
+.env
+# NEVER commit the Admin SDK private key:
+serviceAccountKey.json
