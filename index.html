@@ -119,7 +119,8 @@
                     statusEl.textContent = kind === 'v6'
                         ? 'unavailable on this network'
                         : 'ERR // ' + err.message;
-                    console.warn('Probe failed (' + kind + '):', err.message);
+                    // Quiet by default — a failed v6 probe is normal on IPv4-only networks.
+                    console.debug('Probe failed (' + kind + '):', err.message);
                 });
         }
 
