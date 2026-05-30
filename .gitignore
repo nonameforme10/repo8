@@ -1,1 +1,16 @@
-/vps/*
+# Dependencies
+node_modules/
+
+# Secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+vps/serviceAccountKey.json
+
+# Build / deploy output
+.vercel/
+
+# Logs & OS cruft
+*.log
+.DS_Store
+Thumbs.db
