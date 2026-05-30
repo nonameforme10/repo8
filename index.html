@@ -57,6 +57,9 @@
             align-items: center;
         }
         .ip-output.error { color: #ff4444; font-size: 1.1rem; }
+        .ip-output.ipv6 { font-size: 1.15rem; }
+        .ip-output.muted { color: #777777; font-size: 1rem; border-style: dotted; }
+        .label + .ip-output { margin-bottom: 18px; }
         .meta-grid {
             display: grid;
             grid-template-columns: auto 1fr;
@@ -73,43 +76,55 @@
 </head>
 <body>
     <div class="terminal-card">
-        <div class="label">Target Origin Inbound IP:</div>
-        <div class="ip-output" id="ip"><span class="cursor">RESOLVING_</span></div>
+        <div class="label">Target Origin // Inbound IPv4:</div>
+        <div class="ip-output" id="ip4"><span class="cursor">RESOLVING_</span></div>
+
+        <div class="label">Target Origin // Inbound IPv6:</div>
+        <div class="ip-output ipv6" id="ip6"><span class="cursor">RESOLVING_</span></div>
+
         <div class="meta-grid">
             <div>SOURCE:</div><div class="meta-val">VPS // FIREBASE_RTD</div>
-            <div>LOGGED:</div><div class="meta-val" id="logged">—</div>
-            <div>STATUS:</div><div class="meta-val" id="status">QUERYING...</div>
+            <div>IPv4:</div><div class="meta-val" id="status4">QUERYING...</div>
+            <div>IPv6:</div><div class="meta-val" id="status6">QUERYING...</div>
         </div>
     </div>
 
     <script>
-        // ==== CONFIG: point this at your VPS (the Nginx domain that proxies port 5000) ====
-        const VPS_ENDPOINT = "https://api.hunterstar.online/api/ip";
-        // ==================================================================================
+        // ==== CONFIG: protocol-specific endpoints on your VPS ====
+        // Each host resolves to ONLY one address family, which forces the browser to
+        // connect over that protocol — the only reliable way to read both addresses.
+        const ENDPOINTS = {
+            v4: "https://api.hunterstar.online/api/ip",   // A record only   -> forces IPv4
+            v6: "https://api6.hunterstar.online/api/ip",  // AAAA record only -> forces IPv6
+        };
+        // =========================================================
 
-        const ipEl = document.getElementById('ip');
-        const statusEl = document.getElementById('status');
-        const loggedEl = document.getElementById('logged');
+        function probe(url, ipEl, statusEl, kind) {
+            fetch(url)
+                .then((r) => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then((data) => {
+                    ipEl.className = 'ip-output' + (kind === 'v6' ? ' ipv6' : '');
+                    ipEl.textContent = data.ip;
+                    statusEl.textContent = data.recordedAt
+                        ? '200 OK // logged ' + new Date(data.recordedAt).toISOString()
+                        : '200 OK // PACKET_CAPTURED';
+                })
+                .catch((err) => {
+                    // No route over this family is normal (e.g. networks without IPv6).
+                    ipEl.className = 'ip-output muted';
+                    ipEl.textContent = kind === 'v6' ? 'NO_IPV6_ROUTE' : 'CONNECTION_FAILED';
+                    statusEl.textContent = kind === 'v6'
+                        ? 'unavailable on this network'
+                        : 'ERR // ' + err.message;
+                    console.warn('Probe failed (' + kind + '):', err.message);
+                });
+        }
 
-        fetch(VPS_ENDPOINT)
-            .then((r) => {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-            })
-            .then((data) => {
-                ipEl.textContent = data.ip;
-                statusEl.textContent = '200 OK // PACKET_CAPTURED';
-                loggedEl.textContent = data.recordedAt
-                    ? new Date(data.recordedAt).toISOString()
-                    : 'yes';
-            })
-            .catch((err) => {
-                ipEl.classList.add('error');
-                ipEl.textContent = 'CONNECTION_FAILED';
-                statusEl.textContent = 'ERR // ' + err.message;
-                loggedEl.textContent = 'no';
-                console.error('Failed to reach VPS endpoint:', err);
-            });
+        probe(ENDPOINTS.v4, document.getElementById('ip4'), document.getElementById('status4'), 'v4');
+        probe(ENDPOINTS.v6, document.getElementById('ip6'), document.getElementById('status6'), 'v6');
     </script>
 </body>
 </html>

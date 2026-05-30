@@ -48,8 +48,10 @@ if (serviceAccount && process.env.FIREBASE_DB_URL) {
 
 function resolveClientIp(req) {
     const forwarded = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-    let ip = forwarded || req.headers['x-real-ip'] || req.ip || req.socket.remoteAddress;
-    if (ip === '::1' || ip === '::ffff:127.0.0.1') ip = '127.0.0.1';
+    let ip = forwarded || req.headers['x-real-ip'] || req.ip || req.socket.remoteAddress || '';
+    // Normalize IPv4-mapped IPv6 (e.g. ::ffff:1.2.3.4) down to plain IPv4.
+    if (ip.startsWith('::ffff:')) ip = ip.slice(7);
+    if (ip === '::1') ip = '127.0.0.1';
     return ip;
 }
 
@@ -59,12 +61,14 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // The endpoint the Vercel page fetches. Catches the IP, logs it, returns it.
 app.get('/api/ip', async (req, res) => {
     const ip = resolveClientIp(req);
+    const version = ip.includes(':') ? 6 : 4;
     const recordedAt = Date.now();
 
     if (db) {
         try {
             await db.ref('visits').push({
                 ip,
+                version,
                 userAgent: req.headers['user-agent'] || null,
                 recordedAt: admin.database.ServerValue.TIMESTAMP,
             });
@@ -73,7 +77,7 @@ app.get('/api/ip', async (req, res) => {
         }
     }
 
-    res.json({ ip, recordedAt });
+    res.json({ ip, version, recordedAt });
 });
 
 app.listen(PORT, () => {
