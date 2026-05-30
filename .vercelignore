@@ -1,0 +1,8 @@
+# The VPS backend is deployed separately to your Droplet — don't ship it to Vercel.
+vps/
+
+# Local / tooling files not needed on the static host.
+.claude/
+.env.local
+.git/
+node_modules/
