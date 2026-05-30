@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
@@ -5,21 +6,11 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 5000; // Choose an open port not used by caretrack or portfolio-api
-
-// CRITICAL: behind Nginx, the raw socket shows Nginx's IP. Trusting the proxy
-// lets req.ip read the real client IP from the X-Forwarded-For header.
+const PORT = process.env.PORT || 5000;
 app.set('trust proxy', true);
 
-// The browser on the Vercel domain calls this server directly, so we must
-// allow that cross-origin request. Lock this to your Vercel URL in production.
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
 
-// ---- Firebase Admin (Realtime Database) ----------------------------------
-// The Admin SDK authenticates with a service-account key and BYPASSES database
-// rules. So the rules (database.rules.json) deny all public access, and only
-// this trusted server can write. Loads creds from an env JSON blob or a local
-// gitignored key file; if neither is present the server still runs (no logging).
 function loadServiceAccount() {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try {
