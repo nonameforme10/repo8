@@ -9,7 +9,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 app.set('trust proxy', true);
 
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
+// ALLOWED_ORIGIN may be '*', a single origin, or a comma-separated list of origins.
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '*')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+app.use(cors({ origin: allowedOrigins.includes('*') ? '*' : allowedOrigins }));
 
 function loadServiceAccount() {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
