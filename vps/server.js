@@ -21,6 +21,9 @@ function loadServiceAccount() {
     }
     const keyPath = path.join(__dirname, 'serviceAccountKey.json');
     if (fs.existsSync(keyPath)) return require(keyPath);
+    // Fallback: auto-detect a Firebase-downloaded key (e.g. *-firebase-adminsdk-*.json).
+    const match = fs.readdirSync(__dirname).find((f) => /firebase-adminsdk.*\.json$/i.test(f));
+    if (match) return require(path.join(__dirname, match));
     return null;
 }
 

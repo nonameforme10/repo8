@@ -6,6 +6,9 @@ node_modules/
 .env.*
 !.env.example
 vps/serviceAccountKey.json
+# Firebase Admin SDK private keys (any name) — NEVER commit
+*firebase-adminsdk*.json
+*-adminsdk-*.json
 
 # Build / deploy output
 .vercel/
